@@ -1,0 +1,11 @@
+{
+  "color_sync_source_sha256": "aa685aafc956ecc520b59b8136381d48ba1180d188bbdd57b773b228e38378d6",
+  "guidance_source_sha256": "2d8de4230f691e5673e4de8f66f1f0dff9e57d7c67671a9fd5dd160150fe4cb7",
+  "changes": [
+    "Command-line input and asset paths",
+    "Portable font loading",
+    "Duration and output checks",
+    "Explicit encoder failure checks"
+  ],
+  "source_profile": "1920x1080 Malenia recording; 1.2278x time stretch; 24 fps"
+}

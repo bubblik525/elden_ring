@@ -9,3 +9,4 @@ runs/
 *.mov
 .env
 .DS_Store
+vendor/

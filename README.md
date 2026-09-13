@@ -1,72 +1,86 @@
-![Eldenfly replay instrumentation: keyboard activity and a spiking network](assets/preview.png)
-
 # Eldenfly
 
 [![tests](https://github.com/bubblik525/elden_ring/actions/workflows/tests.yml/badge.svg)](https://github.com/bubblik525/elden_ring/actions/workflows/tests.yml)
 
-**A replay-driven experiment connecting visible keyboard input to a small spiking neural model.** Local video becomes timestamped button states, press events and a reproducible neural-activity visualization.
+**Replay instrumentation for Elden Ring: keyboard telemetry, spiking activity, articulated fly rendering and frame-aligned combat cues.**
 
-The structure is inspired by [Stonkfly](https://github.com/nftechie/stonkfly): separate sensory input, neural state and output layers, with explicit evidence boundaries. This implementation uses its own small synthetic graph. It does not contain Stonkfly code, a biological fly connectome, an autonomous Elden Ring player, or a trained combat policy.
+![Malenia production pipeline](assets/production-preview.jpg)
 
-## Run the demo
+The production scripts in this repository are portable adaptations of the code used to render the Malenia sequence. Feed a local recording through the pipeline to export a color gameplay composition, an animated flybody model, neural panels and timestamped input data.
 
-Python 3.11 or newer. No game installation, dataset, API keys, or GPU required.
+## Quick start
+
+Python 3.11 or newer:
 
 ```sh
 python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[test]'
 python -m eldenfly demo --output runs/demo
-```
-
-This generates a calibration scene, a **silent** `replay.mp4`, `preview.png`, and `telemetry.jsonl`. The demo is synthetic, not gameplay footage ([demo preview](assets/demo.png)). The header image is a local Malenia recording processed by the same renderer.
-
-## Use a recording
-
-```sh
-python -m eldenfly analyze /path/to/gameplay.mp4 --seconds 60 --output runs/session
-python -m eldenfly render /path/to/gameplay.mp4 --seconds 60 --output runs/render
-```
-
-The built-in overlay profile is calibrated for the yellow-highlight keyboard used in the Malenia recordings: a 1920×1080 reference image, with the keyboard in the upper-right corner. Uniformly resized recordings work too. Other keyboard layouts, crops, highlight colours, or recordings without an input overlay need a new profile. Ordinary game HUD prompts do not reveal actual button presses.
-
-`analyze` writes JSONL without rendering. `render` adds the visualization panel and creates a silent MP4; it does not preserve the input audio. Input recordings are read locally and excluded from Git.
-
-## Data path
-
-```mermaid
-flowchart LR
-  A[Local RGB frames] --> B[Calibrated colour detector]
-  B --> C[Keyboard states and rising edges]
-  C --> D[14-channel current encoding]
-  D --> E[96-unit LIF network]
-  C --> F[JSONL telemetry]
-  E --> F
-  E --> G[Replay visualization]
-```
-
-- **Measured:** yellow-pixel fractions, visible key states, sampling timestamps.
-- **Computed:** press events and spikes from the documented LIF equations.
-- **Illustrated:** synthetic connectivity and the neural panel's spatial layout.
-
-The network's weights are fixed. There is no reinforcement learning, game input injection, live object recognition, boss detection, or evidence that a fly brain can play Elden Ring. [Model details](docs/model.md) · [Overlay calibration](docs/calibration.md) · [Validation](docs/validation.md).
-
-## Tests
-
-```sh
 python -m pytest -q
 ```
 
-Tests cover highlight detection at multiple resolutions, the shield icon obscuring F, false-positive colours, held-key event handling, neural time accumulation, refractory bounds, deterministic integration, CLI failures and a decoded demo export. GitHub Actions runs the suite on Python 3.11–3.13.
+The self-contained calibration demo exports `replay.mp4`, `preview.png` and `telemetry.jsonl`. It requires no game installation or external assets.
 
-## Project layout
+## Process a recording
 
-```text
-eldenfly/inputs.py   calibrated highlight detector and press events
-eldenfly/neural.py   deterministic integrate-and-fire model
-eldenfly/render.py   Pillow instrumentation panel
-eldenfly/cli.py      demo, analyze and render commands
-assets/             reproducible README preview
+```sh
+python -m eldenfly analyze gameplay.mp4 --seconds 60 --output runs/session
+python -m eldenfly render gameplay.mp4 --seconds 60 --output runs/render
 ```
 
-MIT-licensed code. The project is independent of FromSoftware and Bandai Namco. Game footage and biological datasets are not distributed in this repository.
+The keyboard detector reads the yellow input overlay in the Malenia recording profile. It supports uniform resizing; a different layout needs [calibration](docs/calibration.md). The lightweight renderer exports silent video and drives a deterministic 96-unit integrate-and-fire network from observed button states.
+
+## Production render
+
+Install FFmpeg and the optional renderer dependencies:
+
+```sh
+pip install -e '.[cinema,test]'
+git clone https://github.com/TuragaLab/flybody.git vendor/flybody
+git -C vendor/flybody checkout d015e9bfe441bd90ae431bac24c55cb74bdbce26
+
+python scripts/malenia_scene.py \
+  --input malenia.mp4 \
+  --brain brain-reference.png \
+  --fly-assets vendor/flybody/flybody/fruitfly/assets \
+  --output runs/scene --seconds 60
+
+python scripts/malenia_guidance.py \
+  --input runs/scene/Malenia-Fly-Keyboard-Sync.mp4 \
+  --telemetry runs/scene/observed-inputs.json \
+  --output runs/guidance --seconds 60
+```
+
+This exports 1920×1080 video at 24 fps with source audio when available. Use `--seconds 2` in both commands for a smoke render. The production composition is calibrated to the original Malenia clip and the supplied brain projection; see [assets, timing and setup](docs/production.md).
+
+## Pipeline
+
+```mermaid
+flowchart LR
+  V[RGB recording] --> K[Visible key states]
+  K --> T[Timestamped telemetry]
+  K --> N[Spiking model]
+  K --> F[Articulated fly rendering]
+  T --> C[Replay cue scheduling]
+  F --> R[1080p composition]
+  C --> R
+```
+
+The lightweight neural model and production visual layers are separate components. Recorded inputs drive the fly animation; combat markers and next-action cues are replay annotations. [Implementation and evidence](docs/production.md#implementation-boundaries) explains how each layer is generated.
+
+## Repository
+
+| Component | Purpose |
+| --- | --- |
+| `eldenfly/inputs.py` | Keyboard sampling and rising-edge events |
+| `eldenfly/neural.py` | Fixed-weight LIF integration |
+| `eldenfly/render.py` | Lightweight telemetry compositor |
+| `eldenfly/production.py` | Production arguments, assets and timing validation |
+| `scripts/malenia_scene.py` | MuJoCo flybody and color composition |
+| `scripts/malenia_guidance.py` | Neural cover, arrows and input countdowns |
+| `tests/` | Detection, integration, export and validation tests |
+
+[Model](docs/model.md) · [Validation](docs/validation.md) · [Third-party materials](THIRD_PARTY.md)
+
+MIT-licensed code. Independent of FromSoftware and Bandai Namco. Gameplay recordings and external anatomical assets are supplied locally.
