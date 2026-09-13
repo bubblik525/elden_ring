@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eldenfly"
+version = "0.1.0"
+description = "Replay-driven keyboard telemetry and a small spiking-network visualization for Elden Ring"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26,<3", "Pillow>=10.1,<13", "opencv-python-headless>=4.9,<6"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+eldenfly = "eldenfly.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["eldenfly*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
