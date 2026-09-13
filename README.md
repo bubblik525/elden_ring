@@ -1,12 +1,23 @@
-# Eldenfly
+# FlyBrain / Elden Ring
 
 [![tests](https://github.com/bubblik525/elden_ring/actions/workflows/tests.yml/badge.svg)](https://github.com/bubblik525/elden_ring/actions/workflows/tests.yml)
 
-**Replay instrumentation for Elden Ring: keyboard telemetry, spiking activity, articulated fly rendering and frame-aligned combat cues.**
+**From gameplay inputs to neural activity and fly motor responses.**
 
 ![Malenia production pipeline](assets/production-preview.jpg)
 
-The production scripts in this repository are portable adaptations of the code used to render the Malenia sequence. Feed a local recording through the pipeline to export a color gameplay composition, an animated flybody model, neural panels and timestamped input data.
+FlyBrain brings an Elden Ring fight into a neural activity dashboard. It reads visible keyboard inputs from a recording, drives a small spiking model and synchronizes an articulated fly with the recorded actions.
+
+The repository includes the production code used for the Malenia sequence, with configurable assets, video export and tested telemetry components. The Python package and command remain `eldenfly`.
+
+## How it works
+
+- **Observe:** sample visible key highlights from gameplay frames.
+- **Encode:** convert button states into input currents for a 96-unit spiking network.
+- **Animate:** map recorded inputs to fly joint poses and illuminated keys.
+- **Inspect:** export neural activity panels, combat annotations and timestamped events.
+
+This implementation processes recordings. A live perception-action loop that sends commands back to the game is not implemented.
 
 ## Quick start
 
